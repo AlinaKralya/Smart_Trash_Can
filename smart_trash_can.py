@@ -2,33 +2,28 @@
 import time
 import board
 import digitalio
-import pwmio                        # Used for Motors and Servo
-import pulseio                      # Used for Ultrasonic Sensor
-import analogio                     # Used for Microphone
+import pwmio                                    # Used for Motors and Servo
+import pulseio                                  # Used for Ultrasonic Sensor
+import analogio                                 # Used for Microphone
 from adafruit_motor import servo
 
 # --------------------- SETUP ------------------------
-
 # Buzzer
 buzzer = digitalio.DigitalInOut(board.D2)
 buzzer.direction = digitalio.Direction.OUTPUT
 
 # Motor B (Right)
-in3 = digitalio.DigitalInOut(board.D3)
+in3 = digitalio.DigitalInOut(board.D3)          # IN3 & IN4 control direction
 in3.direction = digitalio.Direction.OUTPUT
-
 in4 = digitalio.DigitalInOut(board.D4)
 in4.direction = digitalio.Direction.OUTPUT
-
 enb = pwmio.PWMOut(board.D8, frequency=1000)    # ENB = speed for motor B
 
 # Motor A (Left)
-in1 = digitalio.DigitalInOut(board.D5)
+in1 = digitalio.DigitalInOut(board.D5)          # IN1 & IN2 control direction
 in1.direction = digitalio.Direction.OUTPUT
-
 in2 = digitalio.DigitalInOut(board.D6)
 in2.direction = digitalio.Direction.OUTPUT
-
 ena = pwmio.PWMOut(board.D10, frequency=1000)   # ENA = speed for motor A
 
 # Servo
@@ -38,7 +33,6 @@ lid_servo = servo.Servo(pwm)
 # Ultrasonic Sensor
 trig = digitalio.DigitalInOut(board.D12)        # Connecting Trigger
 trig.direction = digitalio.Direction.OUTPUT
-
 echo = pulseio.PulseIn(board.D13)               # Connecting Echo
 echo.pause()
 echo.clear()
@@ -51,25 +45,24 @@ THRESHOLD = 6000
 FULL_CAN = 10.0
 
 # Constants for Servo
-LID_OPEN_ANGLE = 90
+LID_OPEN_ANGLE = 90                             # Check if the angle is right to open and close
 LID_CLOSED_ANGLE = 0
 
 # ------------------- FUNCTIONS ----------------------
-
 # Measuring how full the trash can is
 def measure_distance_in_cm():
 
     # Initiating the measurements
-    trig.value = False       # Clearing previous signals, if any
-    time.sleep(0.000002)        # Letting the trigger to settle
+    trig.value = False                          # Clearing previous signals, if any
+    time.sleep(0.000002)                        # Letting the trigger to settle
     trig.value = True
-    time.sleep(0.00001)         # Sending a 10-microsecond HIGH pulse to start the measurement
+    time.sleep(0.00001)                         # Sending a 10-microsecond HIGH pulse to start the measurement
     trig.value = False
 
     # Listening to the echo
     echo.clear()
-    echo.resume()               # Starts listening
-    time.sleep(0.1)             # Wait for the sensor to collect data
+    echo.resume()                               # Starts listening
+    time.sleep(0.1)                             # Wait for the sensor to collect data
     echo.pause()
 
     # If there is no echo (measurement is not possible)
@@ -84,7 +77,7 @@ def measure_distance_in_cm():
 # Opening the lid with Servo
 def open_lid():
     print("Opening trash can")
-    lid_servo.angle = LID_OPEN_ANGLE #Check if the angle is appropriate to open and close
+    lid_servo.angle = LID_OPEN_ANGLE           
     time.sleep(2)
 
 # Closing the lid with Servo
@@ -107,16 +100,13 @@ def wait_for_clap(timeout=0.5):
 
 # ------------------- MAIN LOOP ----------------------
 while True:
-
     # Block of code for the measurement of how much trash is in the can
     distance = measure_distance_in_cm()
 
     # Checking distance output by the sensor
     if distance:
-
         # If the trash can is full
         if distance <= FULL_CAN:
-
             # Keep buzzing until trash can is not full anymore
             while distance <= FULL_CAN:
                 buzzer.value = True
@@ -126,11 +116,9 @@ while True:
 
                 # Update distance while buzzing
                 distance = measure_distance_in_cm()
-
         # Turn off the buzzer
         else:
             buzzer.value = False
-
     else:
         print("No echo received")
     time.sleep(1)
@@ -145,10 +133,8 @@ while True:
             open_lid()    # Opening
             time.sleep(5)
             close_lid()    # Closing
-
         else:
             print("Single Clap Detected -> Move Forward")
-
             # Motor A moving forward at 50%
             in1.value = True
             in2.value = False
@@ -160,5 +146,4 @@ while True:
             enb.duty_cycle = int(0.5 * 65535)
 
             time.sleep(5)
-    
         time.sleep(2)  # Cooldown to avoid rapid triggers
